@@ -1,6 +1,6 @@
 {
   "name": "pi-pass-secrets",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Pi extension that reads API keys from GNU Password Store (pass) on startup and redacts them from all tool output",
   "keywords": [
     "pi-package",

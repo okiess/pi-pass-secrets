@@ -59,6 +59,9 @@ const loadedSecrets = new Map<string, string>();
 /** pass-path → env-var-name (for status display) */
 const loadedPaths = new Map<string, string>();
 
+/** env-var-name → original value before we overwrote it (restored on shutdown) */
+const originalEnv = new Map<string, string | undefined>();
+
 // ── Settings ──────────────────────────────────────────────────────────
 
 function readConfig(): PassSecretsConfig {
@@ -121,6 +124,14 @@ function redactDeep<T>(value: T): T {
 // ── Load / Clear ──────────────────────────────────────────────────────
 
 function loadSecrets(config: PassSecretsConfig, onError: (msg: string) => void): number {
+  // Save original env values once, before we overwrite anything.
+  // Do this BEFORE clearSecrets so reloads don't lose the originals.
+  for (const [, envVar] of Object.entries(config.mappings)) {
+    if (!originalEnv.has(envVar)) {
+      originalEnv.set(envVar, process.env[envVar]);
+    }
+  }
+
   clearSecrets();
   let count = 0;
 
@@ -145,10 +156,22 @@ function loadSecrets(config: PassSecretsConfig, onError: (msg: string) => void):
 
 function clearSecrets(): void {
   for (const [envVar] of loadedSecrets) {
-    delete process.env[envVar];
+    const original = originalEnv.get(envVar);
+    if (original === undefined) {
+      delete process.env[envVar];
+    } else {
+      process.env[envVar] = original;
+    }
   }
   loadedSecrets.clear();
   loadedPaths.clear();
+  // Note: originalEnv is intentionally NOT cleared here —
+  // it's only cleared on full session_shutdown so reloads work correctly.
+}
+
+function shutdown(): void {
+  clearSecrets();
+  originalEnv.clear();
 }
 
 // ── Extension ─────────────────────────────────────────────────────────
@@ -217,7 +240,7 @@ export default function passSecretsExtension(pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async () => {
-    clearSecrets();
+    shutdown();
   });
 
   // ── /pass-secrets command ───────────────────────────────────────
