@@ -104,9 +104,18 @@ function redact(text: string): string {
   return result;
 }
 
-function redactAll(texts: string[]): string[] {
-  if (loadedSecrets.size === 0) return texts;
-  return texts.map(redact);
+/** Recursively redact all string values in an object/array. */
+function redactDeep<T>(value: T): T {
+  if (typeof value === "string") return redact(value) as T;
+  if (Array.isArray(value)) return value.map(redactDeep) as T;
+  if (value && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      result[k] = redactDeep(v);
+    }
+    return result as T;
+  }
+  return value;
 }
 
 // ── Load / Clear ──────────────────────────────────────────────────────
@@ -175,28 +184,12 @@ export default function passSecretsExtension(pi: ExtensionAPI) {
       return { ...c, text };
     });
 
-    // Also redact details (command output in bash, etc.)
-    let detailsChanged = false;
-    let redactedDetails: Record<string, unknown> | undefined;
-    if (event.details && typeof event.details === "object") {
-      redactedDetails = { ...event.details };
-      const output = event.details.output;
-      if (typeof output === "string") {
-        const r = redact(output);
-        if (r !== output) {
-          redactedDetails.output = r;
-          detailsChanged = true;
-        }
-      }
-      const stderr = event.details.stderr;
-      if (typeof stderr === "string") {
-        const r = redact(stderr);
-        if (r !== stderr) {
-          redactedDetails.stderr = r;
-          detailsChanged = true;
-        }
-      }
+    // Also redact details (recursively — covers bash output, stderr, etc.)
+    let redactedDetails: typeof event.details | undefined;
+    if (event.details) {
+      redactedDetails = redactDeep(event.details);
     }
+    const detailsChanged = redactedDetails !== event.details;
 
     if (!changed && !detailsChanged) return;
     const result: { content?: typeof redacted; details?: typeof redactedDetails } = {};

@@ -88,7 +88,7 @@ No changes needed — the extension injects the env var before providers resolve
 
 **Known limitations:**
 - Secrets shorter than 5 characters are not redacted (too many false positives)
-- If a child process prints a secret, the bash output redaction catches it — but the child process itself has access to the env var (by design)
+- If a child process prints a secret, the recursive output redaction catches it — but the child process itself has access to the env var (by design)
 - Encoding transforms (base64, hex, reverse) bypass exact-match redaction
 
 ## License
