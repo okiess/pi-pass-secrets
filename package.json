@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/okiess/pi-pass-secrets"
+    "url": "git+https://github.com/okiess/pi-pass-secrets.git"
   },
   "pi": {
     "extensions": ["./index.ts"]
