@@ -1,0 +1,26 @@
+{
+  "name": "pi-pass-secrets",
+  "version": "1.0.0",
+  "description": "Pi extension that reads API keys from GNU Password Store (pass) on startup and redacts them from all tool output",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "pass",
+    "password-store",
+    "secrets",
+    "api-keys"
+  ],
+  "author": "Oliver Kiessler",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/okiess/pi-pass-secrets"
+  },
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
